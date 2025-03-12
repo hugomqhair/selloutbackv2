@@ -199,7 +199,7 @@ app.post("/insertSelloutItem", async (req, res) => {
 
 //Insere objetivo promoter
 app.post("/objetivopromoter", async (req, res) => {
-    console.log(req.body)
+    //console.log(req.body)
     //var ins = req.body;
     let ins = req.body.map(body => ({ ano: body.ano, mes: body.mes, idpromoter: body.idpromoter, quant: body.quant, dtref: body.dtref }))
     //console.log('body', ins)
@@ -249,7 +249,7 @@ app.post("/prodshoppreco", async (req, res) => {
     //console.log('Chegou', req.body)
     let ins = req.body.map(body => ({ id: body.id, descrprod: body.descrprod, tipo: body.tipo, referencia: body.referencia }))
     //var ins = req.body;
-    console.log('Produto Shop Preço', ins)
+    //console.log('Produto Shop Preço', ins)
     //${ins.id}, '${ins.descrprod}','${ins.tipo}', '${ins.sku}'
     let query = `INSERT INTO prodshoppreco (id, descrprod, tipo, referencia) VALUES ($1,$2,$3,$4)
                 ON CONFLICT (id) DO UPDATE SET descrprod=$2, tipo=$3, referencia=$4;`
@@ -338,7 +338,7 @@ app.post("/auth", async (req, res) => {
 //Insere Promoter
 app.post("/promoter", async (req, res) => {
     var ins = req.body;
-    console.log(ins)
+    //console.log(ins)
     let query = `INSERT INTO promoter (id, nome, senha,idger, gestor) VALUES (${ins.id},UPPER('${ins.nome}'), '${ins.senha}', ${ins.idger}, ${ins.gestor})
                 ON CONFLICT(id) DO UPDATE SET nome=UPPER('${ins.nome}'), senha='${ins.senha}',idger=${ins.idger}, gestor=${ins.gestor};`
     await insert(query).then(_ => {
@@ -354,7 +354,7 @@ app.post("/promoter", async (req, res) => {
 app.post("/loja", async (req, res) => {
     var ins = req.body;
     ins = ins.map(arr => ({ id: arr.id, idpromoter: arr.idpromoter, nome: arr.nome }))
-    console.log(typeof ins, ins)
+    //console.log(typeof ins, ins)
     let query = `INSERT INTO loja (id, idpromoter, nome ) VALUES ($1, $2, UPPER($3))
                 ON CONFLICT(id) DO UPDATE SET idpromoter=$2, nome=UPPER($3)`
     await insertArray(query, ins).then(_ => {
@@ -417,7 +417,7 @@ app.post("/insertGuelta", async (req, res) => {
 })
 
 app.post("/insertGueltaItem", async (req, res) => {
-    console.log(req.body)
+    //console.log(req.body)
         var ins = req.body;
         ins = ins.map(body => ({ idproduto: body.idproduto, idguelta: body.idguelta, qtdneg: body.qtdneg}))
         //console.log('body', ins)
@@ -425,7 +425,7 @@ app.post("/insertGueltaItem", async (req, res) => {
         let query = `INSERT INTO gueltaitem (idproduto, idguelta,qtdneg)
                     VALUES ($1, $2, $3) ON CONFLICT (idproduto, idguelta)
                     DO UPDATE SET qtdneg = $3;`
-        console.log(query)                    
+        //console.log(query)                    
         await insertArray(query, ins)
             .then(resp => {
                 console.log('RESP**', resp)

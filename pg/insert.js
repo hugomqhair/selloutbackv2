@@ -3,7 +3,7 @@ const param = require("./param")
 
 const config = param
 
-console.log('BD', config)
+//console.log('BD', config)
 
 
 // Configuração da conexão com o PostgreSQL
