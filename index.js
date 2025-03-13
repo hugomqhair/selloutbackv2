@@ -45,6 +45,9 @@ app.get("/consulta", async (req, res) => {
     if (consulta.operacao == 'loja') {
         query = `SELECT id, nome, idpromoter FROM loja WHERE idpromoter=${req.query.user} ORDER BY nome`
         isQuery = true
+    } else if (consulta.operacao == 'lojaguelta') {
+        query = `SELECT id, nome, idvendedor FROM loja WHERE idvendedor=${req.query.user} ORDER BY nome`
+        isQuery = true        
     } else if (consulta.operacao == 'resultadomensal') {
         query = `SELECT TO_CHAR(dtmov,'MM/YYYY') AS mes
                     ,sellout.idpromoter
