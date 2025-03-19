@@ -28,6 +28,7 @@ async function gravarDados(qry) {
   
       // Consulta SQL para inserir os dados na tabela
       //const query = 'INSERT INTO teste01 (texto, dtlog)  VALUES ($1, CURRENT_DATE) RETURNING *';
+      //console.log('qry', qry)
       const query = qry
       // Executa a consulta passando os dados como parâmetros
       const resultado = await client.query(query, []);

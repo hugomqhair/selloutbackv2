@@ -37,7 +37,7 @@ app.get("/select", auth, async (req, res) => {
 });
 
 app.get("/consulta", async (req, res) => {
-    console.log(req.query, req.params)
+    //console.log(req.query, req.params)
     //Esta consulta usa dados da query para buscar na tabela, exemplo http://localhost:3000/consulta?operacao=produto
     let consulta = req.query
     let query
@@ -236,7 +236,7 @@ app.post("/produto", async (req, res) => {
     //console.log('query:', query)
     await insertArray(query, ins)
         .then(resp => {
-            console.log('UPDATE produto: ', resp)
+            //console.log('UPDATE produto: ', resp)
             res.sendStatus(200)
         }).catch(err => {
             console.error(err)
@@ -335,6 +335,54 @@ app.post("/auth", async (req, res) => {
 });
 
 
+//Melhorar essa authvendedor e auth isolando a função principal e chamando apenas as diferença, (use CRTL+CV para ganhar tempo)
+app.post("/authguelta", async (req, res) => {
+
+    var { usuario, senha } = req.body
+    usuario = usuario.toUpperCase();
+
+    // console.log('auth', usuario, senha)
+
+    let query = `SELECT id, UPPER(nome) as nome, senha, gestor FROM vendedor WHERE UPPER(nome)=UPPER('${usuario}')`
+
+    let DB = {}
+    let dados = await select(query, true)
+    DB.users = dados
+
+    if (usuario != undefined) {
+
+        var user = DB.users.find(u => u.nome == usuario);
+        if (user != undefined) {
+            if (user.senha == senha) {
+                jwt.sign({ id: user.id, usuario: user.nome }, JWTSecret, { expiresIn: '48h' }, (err, token) => {
+                    if (err) {
+                        res.status(400);
+                        res.json({ err: "Falha interna" });
+                    } else {
+                        res.status(200);
+                        //console.log('Token:', {token: token, id:user.id, usuario: user.nome})
+                        let loglogin = `INSERT INTO loglogin (idpromoter) VALUES (${user.id});`
+                        insert(loglogin)
+                        res.json({ token: token, id: user.id, usuario: user.nome, gestor: user.gestor });
+                    }
+                })
+            } else {
+                res.status(401);
+                res.json({ err: "Credenciais inválidas!" });
+            }
+        } else {
+            res.status(404);
+            res.json({ err: "O usuário enviado não existe na base de dados!" });
+        }
+
+    } else {
+        res.status(400);
+        res.send({ err: "O usuário enviado é inválido" });
+    }
+});
+
+
+
 
 
 
@@ -356,10 +404,14 @@ app.post("/promoter", async (req, res) => {
 //Insere PromoterLoja
 app.post("/loja", async (req, res) => {
     var ins = req.body;
-    ins = ins.map(arr => ({ id: arr.id, idpromoter: arr.idpromoter, nome: arr.nome }))
-    //console.log(typeof ins, ins)
-    let query = `INSERT INTO loja (id, idpromoter, nome ) VALUES ($1, $2, UPPER($3))
-                ON CONFLICT(id) DO UPDATE SET idpromoter=$2, nome=UPPER($3)`
+    if (typeof ins === 'object'){
+        ins=[ins]
+    } else {
+        ins = ins.map(arr => ({ id: arr.id, idpromoter: arr.idpromoter, nome: arr.nome, idvendedor: arr.idvendedor }))
+    }
+     
+    let query = `INSERT INTO loja (id, idpromoter, nome, idvendedor ) VALUES ($1, $2, UPPER($3), $4)
+                ON CONFLICT(id) DO UPDATE SET idpromoter=$2, nome=UPPER($3), idvendedor=$4;` 
     await insertArray(query, ins).then(_ => {
         res.sendStatus(200)
     }) //Falta tratar erros do BD
@@ -384,12 +436,30 @@ app.get("/guelta", async (req, res) => {
                             ,guelta.idvendedor
                             ,ven.nome as vend
                             ,COALESCE(qtdneg,0) as qtdneg
+                            ,fechada
                         FROM guelta
                         LEFT JOIN vendedor ven ON (ven.id = guelta.idvendedor)
                         LEFT JOIN loja ON (guelta.idloja = loja.id)
                         WHERE ven.id=${idvendedor} AND dtmov >= current_date - 120 ORDER BY dtmov ;`
             let dados = await select(query, true)
             res.json(dados);
+})
+
+
+//Insere Promoter
+app.post("/vendedor", async (req, res) => {
+    var ins = req.body;
+    //console.log(ins)
+    let query = `INSERT INTO vendedor (id, nome, senha) VALUES (${ins.id},UPPER('${ins.nome}'), '${ins.senha}')
+                ON CONFLICT(id) DO UPDATE SET nome=UPPER('${ins.nome}'), senha='${ins.senha}';`
+    await insert(query).then(resp => {
+        //console.log('Vendedor Inserido', resp)
+        res.sendStatus(200)
+    }) //Falta tratar erros do BD
+        .catch(err => {
+            console.log('erro insert Promoter', err)
+            res.send('err', err)
+        })
 })
 
 app.get("/gueltaItens", async (req, res) => {
@@ -409,6 +479,20 @@ app.post("/insertGuelta", async (req, res) => {
     var ins = req.body;
     //console.log(ins)
     let query = `INSERT INTO guelta (idvendedor, idloja, dtmov) VALUES (${ins.idvendedor}, ${ins.idloja}, '${ins.dtmov}');`
+    let dados = await insert(query)
+    //console.log(dados)
+    if (dados === 1) {
+        res.status(200)
+        res.send({ response: "ok", message:"Cadastrado com sucesso" })
+    } else {
+        res.status(401).send(dados)
+    } 
+})
+
+app.post("/fecharGuelta", async (req, res) => {
+    var ins = req.body;
+    //console.log('/fecharGuelta', ins)
+    let query = `UPDATE guelta SET fechada=true WHERE id = ${ins.idguelta};`
     let dados = await insert(query)
     //console.log(dados)
     if (dados === 1) {
