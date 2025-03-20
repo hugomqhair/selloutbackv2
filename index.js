@@ -520,6 +520,60 @@ app.post("/insertGueltaItem", async (req, res) => {
             }).catch(err => res.sendStatus(500))
 })
 
+//Integração entre Sankhya e Gestão de Gueltas, 
+app.get("/exportarGuelta", async (req, res) => {
+    try {
+        let query = `SELECT 
+                        gue.id,
+                        gue.idvendedor,
+                        gue.idloja,
+                        gue.dtmov
+                    FROM guelta gue
+                    WHERE fechada AND dtintegracao IS NULL;`;
+
+        let gueltas = await select(query, true);
+
+        if (!gueltas || gueltas.length === 0) {
+            return res.json({ message: "Nenhum registro encontrado." });
+        }
+
+        // Mapeia todas as consultas de gueltaitens em uma Promise.all
+        let gueltasComItens = await Promise.all(
+            gueltas.map(async (gue) => {
+                let qryGueltaItens = `
+                                    SELECT 
+                                        ite.idproduto,
+                                        ite.qtdneg
+                                    FROM gueltaitem ite
+                                    WHERE idguelta=${gue.id}`;
+
+                let gueltasitens = await select(qryGueltaItens, true);
+                return { ...gue, itens: gueltasitens };
+            })
+        );
+
+        res.json(gueltasComItens);
+    } catch (e) {
+        res.status(500).json({ error: `Erro ao buscar guelta: ${e.message}` });
+    }
+});
+
+
+app.post("/integradaGuelta", async (req, res) => {
+    var ins = req.body;
+    console.log(ins)
+    let query = `UPDATE guelta SET dtintegracao=NOW(), idsankhya=${ins.idsankhya} WHERE id=${ins.idguelta};`
+    let dados = await insert(query)
+    //console.log(dados)
+    if (dados === 1) {
+        res.status(200)
+        res.send({ response: "ok", message:"Cadastrado com sucesso" })
+    } else {
+        res.status(401).send(dados)
+    } 
+})
+
+
 
 //apenas testes
 app.post("/teste", async (req, res) => {
