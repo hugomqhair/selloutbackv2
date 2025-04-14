@@ -440,7 +440,16 @@ app.get("/guelta", async (req, res) => {
                         FROM guelta
                         LEFT JOIN vendedor ven ON (ven.id = guelta.idvendedor)
                         LEFT JOIN loja ON (guelta.idloja = loja.id)
-                        WHERE ven.id=${idvendedor} AND dtmov >= current_date - 120 ORDER BY dtmov ;`
+                        WHERE dtmov >= current_date - 120 
+                          AND (
+                                ven.id = ${idvendedor}
+                                OR EXISTS (
+                                    SELECT 1
+                                    FROM vendedor v
+                                    WHERE v.id = ${idvendedor} AND COALESCE(v.gestor, FALSE) = TRUE
+                                )
+                            )
+                        ORDER BY dtmov ;`
             let dados = await select(query, true)
             res.json(dados);
 })
