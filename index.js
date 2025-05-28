@@ -121,9 +121,11 @@ app.get("/obterSellouts", async (req, res) => {
                     sell.id
                     ,sell.dtmov
                     ,TO_CHAR(dtmov,'DD/MM/YYYY') AS fmt_dtmov
+                    ,sell.idloja
                     ,loja.nome as loja
                     ,pro.nome as vend
-                    ,sell.qtdneg 
+                    ,sell.qtdneg
+                    ,(SELECT id FROM shoppreco WHERE dtmov=sell.dtmov AND idpromoter=sell.idpromoter AND idloja=sell.idloja) as idshoppreco 
                 FROM sellout as sell 
                 LEFT JOIN promoter pro ON (pro.id = sell.idpromoter) 
                 LEFT JOIN loja ON (sell.idloja = loja.id)
@@ -198,6 +200,37 @@ app.post("/insertSelloutItem", async (req, res) => {
             res.sendStatus(200)
         }).catch(err => res.sendStatus(500))
 })
+
+
+app.post("/insertShoppreco", async (req, res) => {
+    var ins = req.body;
+    console.log('insertShoppreco', ins)
+    let query = `INSERT INTO shoppreco (idpromoter, idloja, dtmov) VALUES (${ins.idpromoter}, ${ins.idloja}, '${ins.dtmov}');`
+    let dados = await insert(query)
+    //console.log(dados)
+    if (dados === 1) {
+        res.status(200).send('Shop de Preço, iniciado com sucesso, seguir para digitação dos itens...')
+    } else {
+        res.status(401).send(dados)
+    }
+})
+
+app.get("/loadShopprecoproduto", async (req, res) => {
+    //Esta consulta usa dados da query para buscar na tabela, exemplo http://localhost:3000/consulta?operacao=produto
+    let idshoppreco = req.query.idshoppreco
+    res.statusCode = 200;
+    let query = `SELECT 
+                    pro.id as idproduto
+                    ,fnc_limpa_descrprod(pro.id) as descrprod
+                    ,COALESCE((SELECT qtdestoque FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}),0) as qtdest
+                    ,pro.grupo
+                    ,COALESCE((SELECT valor FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}),0) as valor
+                    ,DENSE_RANK() OVER (ORDER BY grupo) AS idgrupo
+                FROM produto AS pro  ORDER BY grupo, descrprod;`
+    let dados = await select(query, true)
+    res.json(dados);
+});
+
 
 
 //Insere objetivo promoter
