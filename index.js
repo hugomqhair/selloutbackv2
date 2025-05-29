@@ -204,7 +204,7 @@ app.post("/insertSelloutItem", async (req, res) => {
 
 app.post("/insertShoppreco", async (req, res) => {
     var ins = req.body;
-    console.log('insertShoppreco', ins)
+    //console.log('insertShoppreco', ins)
     let query = `INSERT INTO shoppreco (idpromoter, idloja, dtmov) VALUES (${ins.idpromoter}, ${ins.idloja}, '${ins.dtmov}');`
     let dados = await insert(query)
     //console.log(dados)
@@ -219,14 +219,14 @@ app.post("/insertShopPrecoItem", async (req, res) => {
     //console.log(req.body)
     var ins = req.body;
     ins = ins.map(body => ({idshoppreco: body.idshoppreco, idproduto: body.idproduto, qtdestoque: body.qtdest, valor: body.valor}) )
-    console.log(' /insertShopPrecoItem body', ins)
+    //console.log(' /insertShopPrecoItem body', ins)
     //let {idproduto, idsellout, qtdneg} = Object.keys(ins[0])
     let query = `INSERT INTO shopprecoitem (idshoppreco, idproduto, qtdestoque, valor)
                 VALUES ($1, $2, $3, $4) ON CONFLICT (idshoppreco, idproduto )
                 DO UPDATE SET qtdestoque=$3, valor=$4 ;`
     await insertArray(query, ins)
         .then(resp => {
-            console.log('RESP** /insertShopPrecoItem', resp)
+            //console.log('RESP** /insertShopPrecoItem', resp)
             res.sendStatus(200)
         }).catch(err => res.sendStatus(500))
 })
@@ -238,9 +238,9 @@ app.get("/loadShopprecoproduto", async (req, res) => {
     let query = `SELECT 
                     pro.id as idproduto
                     ,fnc_limpa_descrprod(pro.id) as descrprod
-                    ,COALESCE((SELECT qtdestoque FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}),0) as qtdest
+                    ,(SELECT qtdestoque FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}) as qtdest
                     ,pro.grupo
-                    ,COALESCE((SELECT valor FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}),0) as valor
+                    ,(SELECT valor FROM shopprecoitem WHERE idproduto=pro.id AND idshoppreco=${idshoppreco}) as valor
                     ,DENSE_RANK() OVER (ORDER BY grupo) AS idgrupo
                 FROM produto AS pro  ORDER BY grupo, descrprod;`
     let dados = await select(query, true)
@@ -619,7 +619,7 @@ app.get("/exportarGuelta", async (req, res) => {
 
 app.post("/integradaGuelta", async (req, res) => {
     var ins = req.body;
-    console.log(ins)
+    //console.log(ins)
     let query = `UPDATE guelta SET dtintegracao=NOW(), idsankhya=${ins.idsankhya} WHERE id=${ins.idguelta};`
     let dados = await insert(query)
     //console.log(dados)
