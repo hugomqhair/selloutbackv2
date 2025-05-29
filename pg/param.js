@@ -1,9 +1,9 @@
 module.exports = {
-    user:'postgres',
-    host:'127.0.0.1',
+    user:'sellout',
+    host:'sellout.postgresql.dbaas.com.br',
     database:'sellout',
-    password:'postgres',
-    port:'5432',
+    password:'MQHair@765',
+    port:'5432', 
 }
 
 // user:'sellout',
